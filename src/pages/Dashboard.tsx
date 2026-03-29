@@ -1,0 +1,109 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LogOut } from "lucide-react";
+import { motion } from "framer-motion";
+
+const Dashboard = () => {
+  const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (!loading && !user) navigate("/login");
+  }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .single()
+        .then(({ data }) => setProfile(data));
+    }
+  }, [user]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  const displayName = profile?.display_name || user?.user_metadata?.full_name || "Designer";
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url;
+  const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
+              <span className="text-sm font-black text-primary-foreground">D</span>
+            </div>
+            <span className="text-lg font-bold tracking-tight text-foreground">Designfolio</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-9 w-9">
+              <AvatarImage src={avatarUrl} />
+              <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-bold">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <Button variant="ghost" size="icon" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Content */}
+      <main className="mx-auto max-w-7xl px-6 py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h1 className="text-4xl font-black tracking-tight text-foreground">
+            Welcome back, {displayName.split(" ")[0]} 👋
+          </h1>
+          <p className="mt-2 text-lg text-muted-foreground">
+            Your creative workspace is ready. More features coming soon.
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          {["Projects", "Inspiration", "Analytics"].map((title, i) => (
+            <div
+              key={title}
+              className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 transition-all hover:border-primary/30 hover:shadow-lg"
+            >
+              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-primary/5 transition-transform group-hover:scale-150" />
+              <h3 className="relative text-xl font-bold text-foreground">{title}</h3>
+              <p className="relative mt-2 text-sm text-muted-foreground">Coming soon</p>
+            </div>
+          ))}
+        </motion.div>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;
