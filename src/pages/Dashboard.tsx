@@ -42,26 +42,22 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const [figmaFileUrl, setFigmaFileUrl] = useState<string | null>(null);
+  const [jobCode, setJobCode] = useState<string | null>(null);
 
   const handlePromptSubmit = async (prompt: string) => {
     setLastPrompt(prompt);
-    setFigmaFileUrl(null);
+    setJobCode(null);
     setIsGenerating(true);
     toast({
       title: "Generating your landing page...",
-      description: "Claude is designing your page in Figma. This may take a couple of minutes.",
+      description: "Claude is designing your page. This may take a couple of minutes.",
     });
 
     try {
-      const connection = getFigmaConnection();
       const response = await fetch(`${AGENT_URL}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt,
-          plan_key: connection?.plan_key || "",
-        }),
+        body: JSON.stringify({ prompt }),
       });
 
       const data = await response.json();
@@ -75,13 +71,10 @@ const Dashboard = () => {
         return;
       }
 
-      if (data.figma_file_url) {
-        setFigmaFileUrl(data.figma_file_url);
-      }
-
+      setJobCode(data.job_code);
       toast({
-        title: "Landing page created!",
-        description: "Your design has been created in Figma.",
+        title: "Design ready!",
+        description: `Open the Designfolio plugin in Figma and enter code: ${data.job_code}`,
       });
     } catch (err: any) {
       toast({
@@ -154,6 +147,39 @@ const Dashboard = () => {
           <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} disabled={!figmaConnected} />
         </div>
 
+        {jobCode && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 rounded-xl border border-[#A259FF]/30 bg-[#A259FF]/5 p-6"
+          >
+            <h3 className="text-sm font-semibold text-[#A259FF] uppercase tracking-wide">
+              Your design is ready
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Open the <strong>Designfolio</strong> plugin in Figma and enter this code:
+            </p>
+            <div className="mt-4 flex items-center gap-4">
+              <span className="rounded-lg bg-background px-6 py-3 font-mono text-2xl font-bold tracking-[0.3em] text-foreground border border-border">
+                {jobCode}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(jobCode);
+                  toast({ title: "Copied!", description: "Code copied to clipboard." });
+                }}
+              >
+                Copy
+              </Button>
+            </div>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Code expires in 1 hour. Run the Designfolio plugin from Figma's Plugins menu.
+            </p>
+          </motion.div>
+        )}
+
         {lastPrompt && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -164,16 +190,6 @@ const Dashboard = () => {
               Last prompt
             </h3>
             <p className="mt-2 text-sm text-foreground whitespace-pre-wrap">{lastPrompt}</p>
-            {figmaFileUrl && (
-              <a
-                href={figmaFileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#A259FF] px-4 py-2 text-sm font-medium text-white hover:bg-[#8B3FE0] transition-colors"
-              >
-                Open in Figma
-              </a>
-            )}
           </motion.div>
         )}
       </main>
