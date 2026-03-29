@@ -9,6 +9,7 @@ export interface FigmaConnection {
   user_id: string;
   handle: string;
   email: string;
+  plan_key?: string;
 }
 
 export function getFigmaAuthUrl(state: string): string {

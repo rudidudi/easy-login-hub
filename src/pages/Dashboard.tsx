@@ -11,7 +11,7 @@ import FigmaConnect from "@/components/FigmaConnect";
 import { useToast } from "@/hooks/use-toast";
 import { getFigmaConnection } from "@/lib/figma";
 
-const GENERATE_URL = "https://qignmlbskhxsdgduxxdg.supabase.co/functions/v1/generate-landing-page";
+const AGENT_URL = import.meta.env.VITE_AGENT_URL || "http://localhost:3001";
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -42,22 +42,25 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  const [figmaFileUrl, setFigmaFileUrl] = useState<string | null>(null);
+
   const handlePromptSubmit = async (prompt: string) => {
     setLastPrompt(prompt);
+    setFigmaFileUrl(null);
     setIsGenerating(true);
     toast({
       title: "Generating your landing page...",
-      description: "Claude is designing your page. This may take up to a minute.",
+      description: "Claude is designing your page in Figma. This may take a couple of minutes.",
     });
 
     try {
       const connection = getFigmaConnection();
-      const response = await fetch(GENERATE_URL, {
+      const response = await fetch(`${AGENT_URL}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt,
-          figma_access_token: connection?.access_token || null,
+          plan_key: connection?.plan_key || "",
         }),
       });
 
@@ -72,20 +75,14 @@ const Dashboard = () => {
         return;
       }
 
-      // Store the generated code for Figma execution
-      localStorage.setItem("figma_generated_code", data.generated_code);
-
-      if (data.figma_file_url && !data.mcp_error) {
-        toast({
-          title: "Landing page created!",
-          description: "Your design has been created in Figma.",
-        });
-      } else {
-        toast({
-          title: "Design generated!",
-          description: "Your landing page design is ready. Creating in Figma...",
-        });
+      if (data.figma_file_url) {
+        setFigmaFileUrl(data.figma_file_url);
       }
+
+      toast({
+        title: "Landing page created!",
+        description: "Your design has been created in Figma.",
+      });
     } catch (err: any) {
       toast({
         title: "Error",
@@ -167,6 +164,16 @@ const Dashboard = () => {
               Last prompt
             </h3>
             <p className="mt-2 text-sm text-foreground whitespace-pre-wrap">{lastPrompt}</p>
+            {figmaFileUrl && (
+              <a
+                href={figmaFileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#A259FF] px-4 py-2 text-sm font-medium text-white hover:bg-[#8B3FE0] transition-colors"
+              >
+                Open in Figma
+              </a>
+            )}
           </motion.div>
         )}
       </main>
