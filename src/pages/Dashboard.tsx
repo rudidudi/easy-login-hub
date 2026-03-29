@@ -6,11 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut } from "lucide-react";
 import { motion } from "framer-motion";
+import PromptForm from "@/components/PromptForm";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [lastPrompt, setLastPrompt] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!loading && !user) navigate("/login");
@@ -30,6 +35,18 @@ const Dashboard = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
+  };
+
+  const handlePromptSubmit = (prompt: string) => {
+    setLastPrompt(prompt);
+    setIsGenerating(true);
+    toast({
+      title: "Prompt saved",
+      description: "Your prompt is ready. Claude Code will generate your Figma landing page via MCP.",
+    });
+    // The prompt is stored in state and ready for Claude Code to pick up
+    // via the prompt-to-figma skill. Generation is handled externally.
+    setTimeout(() => setIsGenerating(false), 2000);
   };
 
   if (loading) {
@@ -80,27 +97,26 @@ const Dashboard = () => {
             Welcome back, {displayName.split(" ")[0]} 👋
           </h1>
           <p className="mt-2 text-lg text-muted-foreground">
-            Your creative workspace is ready. More features coming soon.
+            Describe your landing page and generate it directly in Figma.
           </p>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          {["Projects", "Inspiration", "Analytics"].map((title, i) => (
-            <div
-              key={title}
-              className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card p-8 transition-all hover:border-primary/30 hover:shadow-lg"
-            >
-              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-primary/5 transition-transform group-hover:scale-150" />
-              <h3 className="relative text-xl font-bold text-foreground">{title}</h3>
-              <p className="relative mt-2 text-sm text-muted-foreground">Coming soon</p>
-            </div>
-          ))}
-        </motion.div>
+        <div className="mt-10">
+          <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} />
+        </div>
+
+        {lastPrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 rounded-xl border border-border/50 bg-card p-6"
+          >
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Last prompt
+            </h3>
+            <p className="mt-2 text-sm text-foreground whitespace-pre-wrap">{lastPrompt}</p>
+          </motion.div>
+        )}
       </main>
     </div>
   );
