@@ -11,7 +11,7 @@ import FigmaConnect from "@/components/FigmaConnect";
 import { useToast } from "@/hooks/use-toast";
 import { getFigmaConnection } from "@/lib/figma";
 
-const AGENT_URL = import.meta.env.VITE_AGENT_URL || "http://localhost:3001";
+const AGENT_URL = "https://designfolio-agent-production.up.railway.app";
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
