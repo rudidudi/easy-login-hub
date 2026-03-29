@@ -9,6 +9,9 @@ import { motion } from "framer-motion";
 import PromptForm from "@/components/PromptForm";
 import FigmaConnect from "@/components/FigmaConnect";
 import { useToast } from "@/hooks/use-toast";
+import { getFigmaConnection } from "@/lib/figma";
+
+const GENERATE_URL = "https://qignmlbskhxsdgduxxdg.supabase.co/functions/v1/generate-landing-page";
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -39,16 +42,59 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const handlePromptSubmit = (prompt: string) => {
+  const handlePromptSubmit = async (prompt: string) => {
     setLastPrompt(prompt);
     setIsGenerating(true);
     toast({
-      title: "Prompt saved",
-      description: "Your prompt is ready. Claude Code will generate your Figma landing page via MCP.",
+      title: "Generating your landing page...",
+      description: "Claude is designing your page. This may take up to a minute.",
     });
-    // The prompt is stored in state and ready for Claude Code to pick up
-    // via the prompt-to-figma skill. Generation is handled externally.
-    setTimeout(() => setIsGenerating(false), 2000);
+
+    try {
+      const connection = getFigmaConnection();
+      const response = await fetch(GENERATE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          figma_access_token: connection?.access_token || null,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        toast({
+          title: "Generation failed",
+          description: data.error || "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Store the generated code for Figma execution
+      localStorage.setItem("figma_generated_code", data.generated_code);
+
+      if (data.figma_file_url && !data.mcp_error) {
+        toast({
+          title: "Landing page created!",
+          description: "Your design has been created in Figma.",
+        });
+      } else {
+        toast({
+          title: "Design generated!",
+          description: "Your landing page design is ready. Creating in Figma...",
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to generate. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   if (loading) {
