@@ -8,9 +8,10 @@ import { motion } from "framer-motion";
 interface PromptFormProps {
   onSubmit: (prompt: string) => void;
   isGenerating?: boolean;
+  disabled?: boolean;
 }
 
-const PromptForm = ({ onSubmit, isGenerating = false }: PromptFormProps) => {
+const PromptForm = ({ onSubmit, isGenerating = false, disabled = false }: PromptFormProps) => {
   const [prompt, setPrompt] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -25,7 +26,7 @@ const PromptForm = ({ onSubmit, isGenerating = false }: PromptFormProps) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
     >
-      <Card className="border-border/50 bg-card">
+      <Card className={`border-border/50 bg-card ${disabled ? "opacity-60" : ""}`}>
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#A259FF]/10">
@@ -46,15 +47,17 @@ const PromptForm = ({ onSubmit, isGenerating = false }: PromptFormProps) => {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               className="min-h-[160px] resize-none border-border/50 bg-background text-base leading-relaxed placeholder:text-muted-foreground/60"
-              disabled={isGenerating}
+              disabled={isGenerating || disabled}
             />
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
-                Your prompt will be used to generate a Figma landing page via MCP
+                {disabled
+                  ? "Connect your Figma account above to get started"
+                  : "Your prompt will be used to generate a Figma landing page via MCP"}
               </p>
               <Button
                 type="submit"
-                disabled={!prompt.trim() || isGenerating}
+                disabled={!prompt.trim() || isGenerating || disabled}
                 className="gap-2"
               >
                 {isGenerating ? (

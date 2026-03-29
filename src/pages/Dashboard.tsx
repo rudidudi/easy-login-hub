@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 import PromptForm from "@/components/PromptForm";
+import FigmaConnect from "@/components/FigmaConnect";
 import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
@@ -15,6 +16,7 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastPrompt, setLastPrompt] = useState<string | null>(null);
+  const [figmaConnected, setFigmaConnected] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -101,8 +103,12 @@ const Dashboard = () => {
           </p>
         </motion.div>
 
-        <div className="mt-10">
-          <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} />
+        <div className="mt-8">
+          <FigmaConnect onConnectionChange={setFigmaConnected} />
+        </div>
+
+        <div className="mt-6">
+          <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} disabled={!figmaConnected} />
         </div>
 
         {lastPrompt && (
