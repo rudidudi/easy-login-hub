@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { saveFigmaConnection } from "@/lib/figma";
+
+const EDGE_FUNCTION_URL = "https://qignmlbskhxsdgduxxdg.supabase.co/functions/v1/figma-oauth";
 
 const FigmaCallback = () => {
   const [searchParams] = useSearchParams();
@@ -27,15 +28,19 @@ const FigmaCallback = () => {
       sessionStorage.removeItem("figma_oauth_state");
 
       try {
-        const { data, error: fnError } = await supabase.functions.invoke("figma-oauth", {
-          body: {
+        const response = await fetch(EDGE_FUNCTION_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             code,
             redirect_uri: import.meta.env.VITE_FIGMA_REDIRECT_URI,
-          },
+          }),
         });
 
-        if (fnError || data?.error) {
-          setError(data?.error || fnError?.message || "Failed to connect Figma.");
+        const data = await response.json();
+
+        if (!response.ok || data?.error) {
+          setError(data?.error || "Failed to connect Figma.");
           return;
         }
 
