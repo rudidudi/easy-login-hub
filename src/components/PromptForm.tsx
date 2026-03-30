@@ -152,7 +152,7 @@ const PromptForm = ({ onSubmit, isGenerating = false, activeMode = null, disable
                         <div className="text-left">
                           <div className="font-semibold text-sm">Generate with MCP</div>
                           <div className="text-xs text-muted-foreground font-normal">
-                            For Claude Code + Figma MCP users
+                            Creates directly in your Figma
                           </div>
                         </div>
                       </Button>

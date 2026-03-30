@@ -56,12 +56,59 @@ const Dashboard = () => {
     setIsGenerating(true);
 
     if (mode === "mcp") {
-      setMcpPrompt(prompt);
-      setIsGenerating(false);
+      // MCP mode: call the agent server with Figma token for direct MCP generation
+      const figmaConnection = getFigmaConnection();
+      if (!figmaConnection?.access_token) {
+        toast({
+          title: "Figma not connected",
+          description: "Connect your Figma account to use MCP generation.",
+          variant: "destructive",
+        });
+        setIsGenerating(false);
+        return;
+      }
+
       toast({
-        title: "Prompt ready for MCP",
-        description: "Copy the command below and run it in Claude Code with Figma MCP connected.",
+        title: "Generating via MCP...",
+        description: "Creating your landing page directly in Figma. This may take a few minutes.",
       });
+
+      try {
+        const userApiKey = getStoredApiKey();
+        const response = await fetch(`${AGENT_URL}/generate-mcp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt,
+            figma_access_token: figmaConnection.access_token,
+            ...(userApiKey && { api_key: userApiKey }),
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || data.error) {
+          toast({
+            title: "MCP generation failed",
+            description: data.error || "Something went wrong. Please try again.",
+            variant: "destructive",
+          });
+        } else {
+          setMcpPrompt(prompt);
+          toast({
+            title: "Design created!",
+            description: "Your landing page has been created directly in Figma.",
+          });
+        }
+      } catch (err: any) {
+        toast({
+          title: "Error",
+          description: err.message || "MCP generation failed. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsGenerating(false);
+      }
       return;
     }
 
@@ -242,33 +289,11 @@ const Dashboard = () => {
                 className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6"
               >
                 <h3 className="text-sm font-semibold text-emerald-500 uppercase tracking-wide">
-                  MCP Generation — Ready
+                  Design created in Figma
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Open <strong>Claude Code</strong> (with Figma MCP connected) and paste this command:
+                  Your landing page has been created directly in your Figma account via MCP. Open Figma to see it.
                 </p>
-                <div className="mt-4 rounded-lg bg-background border border-border p-4">
-                  <pre className="text-sm text-foreground whitespace-pre-wrap font-mono leading-relaxed">
-{`Create a Figma landing page with this description:\n\n${mcpPrompt}`}
-                  </pre>
-                </div>
-                <div className="mt-3 flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      navigator.clipboard.writeText(
-                        `Create a Figma landing page with this description:\n\n${mcpPrompt}`
-                      );
-                      toast({ title: "Copied!", description: "Prompt copied to clipboard." });
-                    }}
-                  >
-                    Copy prompt
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    Requires Claude Code with Figma MCP server connected
-                  </p>
-                </div>
               </motion.div>
             )}
 
