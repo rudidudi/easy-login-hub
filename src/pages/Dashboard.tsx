@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut } from "lucide-react";
 import { motion } from "framer-motion";
-import PromptForm from "@/components/PromptForm";
+import PromptForm, { GenerationMode } from "@/components/PromptForm";
 import FigmaConnect from "@/components/FigmaConnect";
 import { useToast } from "@/hooks/use-toast";
 import { getFigmaConnection } from "@/lib/figma";
@@ -43,11 +43,28 @@ const Dashboard = () => {
   };
 
   const [jobCode, setJobCode] = useState<string | null>(null);
+  const [generationMode, setGenerationMode] = useState<GenerationMode | null>(null);
+  const [mcpPrompt, setMcpPrompt] = useState<string | null>(null);
 
-  const handlePromptSubmit = async (prompt: string) => {
+  const handlePromptSubmit = async (prompt: string, mode: GenerationMode) => {
     setLastPrompt(prompt);
     setJobCode(null);
+    setMcpPrompt(null);
+    setGenerationMode(mode);
     setIsGenerating(true);
+
+    if (mode === "mcp") {
+      // MCP mode: show the prompt for Claude Code users to copy
+      setMcpPrompt(prompt);
+      setIsGenerating(false);
+      toast({
+        title: "Prompt ready for MCP",
+        description: "Copy the command below and run it in Claude Code with Figma MCP connected.",
+      });
+      return;
+    }
+
+    // Plugin mode: call the agent server
     toast({
       title: "Generating your landing page...",
       description: "Claude is designing your page. This may take a couple of minutes.",
@@ -177,6 +194,43 @@ const Dashboard = () => {
             <p className="mt-4 text-xs text-muted-foreground">
               Code expires in 1 hour. Run the Designfolio plugin from Figma's Plugins menu.
             </p>
+          </motion.div>
+        )}
+
+        {mcpPrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6"
+          >
+            <h3 className="text-sm font-semibold text-emerald-500 uppercase tracking-wide">
+              MCP Generation — Ready
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Open <strong>Claude Code</strong> (with Figma MCP connected) and paste this command:
+            </p>
+            <div className="mt-4 rounded-lg bg-background border border-border p-4">
+              <pre className="text-sm text-foreground whitespace-pre-wrap font-mono leading-relaxed">
+{`Create a Figma landing page with this description:\n\n${mcpPrompt}`}
+              </pre>
+            </div>
+            <div className="mt-3 flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `Create a Figma landing page with this description:\n\n${mcpPrompt}`
+                  );
+                  toast({ title: "Copied!", description: "Prompt copied to clipboard." });
+                }}
+              >
+                Copy prompt
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Requires Claude Code with Figma MCP server connected
+              </p>
+            </div>
           </motion.div>
         )}
 

@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wand2, Figma, Loader2 } from "lucide-react";
+import { Wand2, Figma, Loader2, Puzzle, Terminal } from "lucide-react";
 import { motion } from "framer-motion";
 
+export type GenerationMode = "plugin" | "mcp";
+
 interface PromptFormProps {
-  onSubmit: (prompt: string) => void;
+  onSubmit: (prompt: string, mode: GenerationMode) => void;
   isGenerating?: boolean;
   disabled?: boolean;
 }
@@ -14,10 +16,9 @@ interface PromptFormProps {
 const PromptForm = ({ onSubmit, isGenerating = false, disabled = false }: PromptFormProps) => {
   const [prompt, setPrompt] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (mode: GenerationMode) => {
     if (!prompt.trim() || isGenerating) return;
-    onSubmit(prompt.trim());
+    onSubmit(prompt.trim(), mode);
   };
 
   return (
@@ -35,13 +36,13 @@ const PromptForm = ({ onSubmit, isGenerating = false, disabled = false }: Prompt
             <div>
               <CardTitle className="text-xl font-bold">Create a Landing Page</CardTitle>
               <CardDescription>
-                Describe your landing page and we'll generate it in Figma
+                Describe your landing page and choose how to generate it
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4">
             <Textarea
               placeholder="Describe your landing page... e.g. 'A modern SaaS landing page for a project management tool with a hero section, features grid, pricing table, and testimonials. Use a blue and white color scheme with clean typography.'"
               value={prompt}
@@ -49,31 +50,55 @@ const PromptForm = ({ onSubmit, isGenerating = false, disabled = false }: Prompt
               className="min-h-[160px] resize-none border-border/50 bg-background text-base leading-relaxed placeholder:text-muted-foreground/60"
               disabled={isGenerating || disabled}
             />
-            <div className="flex items-center justify-between">
+            {disabled ? (
               <p className="text-xs text-muted-foreground">
-                {disabled
-                  ? "Connect your Figma account above to get started"
-                  : "Your prompt will be used to generate a Figma landing page via MCP"}
+                Connect your Figma account above to get started
               </p>
-              <Button
-                type="submit"
-                disabled={!prompt.trim() || isGenerating || disabled}
-                className="gap-2"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="h-4 w-4" />
-                    Generate in Figma
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Choose generation method
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Button
+                    onClick={() => handleSubmit("plugin")}
+                    disabled={!prompt.trim() || isGenerating || disabled}
+                    className="gap-2 h-auto py-3 px-4 bg-[#A259FF] hover:bg-[#8B3FE0] text-white"
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Puzzle className="h-4 w-4" />
+                    )}
+                    <div className="text-left">
+                      <div className="font-semibold text-sm">Generate with Plugin</div>
+                      <div className="text-xs opacity-80 font-normal">
+                        Use the Figma plugin to render
+                      </div>
+                    </div>
+                  </Button>
+                  <Button
+                    onClick={() => handleSubmit("mcp")}
+                    disabled={!prompt.trim() || isGenerating || disabled}
+                    variant="outline"
+                    className="gap-2 h-auto py-3 px-4 border-border/50"
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Terminal className="h-4 w-4" />
+                    )}
+                    <div className="text-left">
+                      <div className="font-semibold text-sm">Generate with MCP</div>
+                      <div className="text-xs text-muted-foreground font-normal">
+                        For Claude Code + Figma MCP users
+                      </div>
+                    </div>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </motion.div>
