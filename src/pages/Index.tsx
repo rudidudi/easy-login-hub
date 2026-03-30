@@ -53,6 +53,16 @@ const Index = () => {
             <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
               Turn a text prompt into a complete landing page in your favorite design tool. Powered by Claude AI — no manual design work needed.
             </p>
+            <div className="mt-5 flex items-center justify-center gap-4 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                Figma
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+                Canva — coming soon
+              </span>
+            </div>
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Button
                 size="lg"
