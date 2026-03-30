@@ -189,16 +189,18 @@ const ApiKeySettings = ({ onKeyChange }: ApiKeySettingsProps) => {
               className="overflow-hidden"
             >
               <div className="mt-3 space-y-2">
-                <div className="flex gap-1.5">
-                  <Input
-                    type={showKey ? "text" : "password"}
-                    placeholder="sk-ant-..."
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    className="font-mono text-xs h-8 min-w-0"
-                    onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                    autoFocus
-                  />
+                <div className="flex gap-1.5 overflow-hidden">
+                  <div className="flex-1 min-w-0">
+                    <Input
+                      type={showKey ? "text" : "password"}
+                      placeholder="sk-ant-..."
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      className="font-mono text-xs h-8 w-full"
+                      onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                      autoFocus
+                    />
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
