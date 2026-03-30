@@ -188,35 +188,39 @@ const ApiKeySettings = ({ onKeyChange }: ApiKeySettingsProps) => {
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className="mt-3 flex gap-2">
-                <Input
-                  type={showKey ? "text" : "password"}
-                  placeholder="sk-ant-..."
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="font-mono text-xs h-8"
-                  onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                  autoFocus
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowKey(!showKey)}
-                  className="shrink-0 h-8 w-8"
-                >
-                  {showKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                </Button>
-                <Button onClick={handleSave} disabled={!apiKey.trim()} size="sm" className="shrink-0 h-8 text-xs">
-                  Save
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => { setIsEditing(false); setApiKey(""); }}
-                  className="shrink-0 h-8 text-xs"
-                >
-                  Cancel
-                </Button>
+              <div className="mt-3 space-y-2">
+                <div className="flex gap-1.5">
+                  <Input
+                    type={showKey ? "text" : "password"}
+                    placeholder="sk-ant-..."
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    className="font-mono text-xs h-8 min-w-0"
+                    onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                    autoFocus
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowKey(!showKey)}
+                    className="shrink-0 h-8 w-8"
+                  >
+                    {showKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleSave} disabled={!apiKey.trim()} size="sm" className="h-7 text-xs flex-1">
+                    Save
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setIsEditing(false); setApiKey(""); }}
+                    className="h-7 text-xs flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             </motion.div>
           )}
