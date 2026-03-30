@@ -121,8 +121,8 @@ serve(async (req) => {
         } else {
           mcpError = `MCP server returned ${mpcInitResponse.status}`;
         }
-      } catch (e) {
-        mcpError = e.message;
+      } catch (e: unknown) {
+        mcpError = e instanceof Error ? e.message : "Unknown error";
       }
     }
 
