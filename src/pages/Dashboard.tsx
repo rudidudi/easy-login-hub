@@ -199,7 +199,7 @@ const Dashboard = () => {
             </motion.div>
 
             <div className="mt-8">
-              <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} disabled={!figmaConnected} />
+              <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} activeMode={generationMode} disabled={!figmaConnected} />
             </div>
 
             {jobCode && (
