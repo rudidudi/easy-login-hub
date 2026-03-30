@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Figma, Check, LogOut } from "lucide-react";
+import { Figma, Check, LogOut, Info, X } from "lucide-react";
 import { getFigmaConnection, getFigmaAuthUrl, clearFigmaConnection, FigmaConnection } from "@/lib/figma";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface FigmaConnectProps {
   onConnectionChange: (connected: boolean) => void;
@@ -11,6 +11,7 @@ interface FigmaConnectProps {
 
 const FigmaConnect = ({ onConnectionChange }: FigmaConnectProps) => {
   const [connection, setConnection] = useState<FigmaConnection | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
     const stored = getFigmaConnection();
@@ -18,7 +19,6 @@ const FigmaConnect = ({ onConnectionChange }: FigmaConnectProps) => {
     onConnectionChange(!!stored);
   }, [onConnectionChange]);
 
-  // Listen for connection updates from the callback page
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "figma_connection") {
@@ -45,62 +45,98 @@ const FigmaConnect = ({ onConnectionChange }: FigmaConnectProps) => {
 
   if (connection) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <Card className="border-green-500/30 bg-green-500/5">
-          <CardContent className="flex items-center justify-between py-4">
+      <Card className="border-green-500/30 bg-green-500/5">
+        <CardContent className="py-3 px-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/10">
-                <Check className="h-4 w-4 text-green-500" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
+                <Check className="h-3.5 w-3.5 text-green-500" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-foreground">
-                  Connected to Figma
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {connection.handle} ({connection.email})
-                </p>
+                <p className="text-sm font-semibold text-foreground">Figma</p>
+                <p className="text-[11px] text-muted-foreground">{connection.handle}</p>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleDisconnect} className="gap-2 text-muted-foreground">
-              <LogOut className="h-3 w-3" />
-              Disconnect
-            </Button>
-          </CardContent>
-        </Card>
-      </motion.div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowInfo(!showInfo)}
+                className="h-7 w-7 text-muted-foreground"
+              >
+                {showInfo ? <X className="h-3 w-3" /> : <Info className="h-3 w-3" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleDisconnect}
+                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+              >
+                <LogOut className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+          <AnimatePresence>
+            {showInfo && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <p className="mt-2 pt-2 border-t border-green-500/10 text-[11px] text-muted-foreground">
+                  Connected as <strong>{connection.handle}</strong> ({connection.email}). Figma is used to render your generated landing pages via the Designfolio plugin.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
-      <Card className="border-border/50 bg-card">
-        <CardContent className="flex items-center justify-between py-4">
+    <Card className="border-border/50 bg-card">
+      <CardContent className="py-3 px-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#A259FF]/10">
-              <Figma className="h-4 w-4 text-[#A259FF]" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#A259FF]/10">
+              <Figma className="h-3.5 w-3.5 text-[#A259FF]" />
             </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">
-                Connect your Figma account
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Required to generate landing pages in your Figma files
-              </p>
-            </div>
+            <p className="text-sm font-semibold text-foreground">Figma</p>
           </div>
-          <Button onClick={handleConnect} className="gap-2">
-            <Figma className="h-4 w-4" />
-            Connect Figma
-          </Button>
-        </CardContent>
-      </Card>
-    </motion.div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowInfo(!showInfo)}
+              className="h-7 w-7 text-muted-foreground"
+            >
+              {showInfo ? <X className="h-3 w-3" /> : <Info className="h-3 w-3" />}
+            </Button>
+            <Button onClick={handleConnect} size="sm" className="h-7 text-xs gap-1.5">
+              Connect
+            </Button>
+          </div>
+        </div>
+        <AnimatePresence>
+          {showInfo && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <p className="mt-2 pt-2 border-t border-border/50 text-[11px] text-muted-foreground">
+                Connect your Figma account to generate landing pages directly on your canvas via the Designfolio plugin.
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CardContent>
+    </Card>
   );
 };
 

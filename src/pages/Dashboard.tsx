@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Figma, Key, Check, Palette } from "lucide-react";
+import { LogOut, Palette } from "lucide-react";
 import { motion } from "framer-motion";
 import PromptForm, { GenerationMode } from "@/components/PromptForm";
 import FigmaConnect from "@/components/FigmaConnect";
@@ -165,24 +165,21 @@ const Dashboard = () => {
               <ApiKeySettings />
 
               {/* Canvas — Coming Soon */}
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                <Card className="border-border/50 bg-card">
-                  <CardContent className="flex items-center justify-between py-4">
+              <Card className="border-border/50 bg-card opacity-60">
+                <CardContent className="py-3 px-4">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500/10">
-                        <Palette className="h-4 w-4 text-orange-500" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10">
+                        <Palette className="h-3.5 w-3.5 text-orange-500" />
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">Canvas</p>
-                        <p className="text-xs text-muted-foreground">Coming soon</p>
-                      </div>
+                      <p className="text-sm font-semibold text-foreground">Canvas</p>
                     </div>
-                    <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
                       Soon
                     </span>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </motion.aside>
 

@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Key, Check, Eye, EyeOff, X } from "lucide-react";
-import { motion } from "framer-motion";
+import { Key, Check, Eye, EyeOff, X, Info } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 
 const STORAGE_KEY = "anthropic_api_key";
@@ -30,6 +30,7 @@ const ApiKeySettings = ({ onKeyChange }: ApiKeySettingsProps) => {
   const [savedKey, setSavedKey] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showKey, setShowKey] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -56,7 +57,7 @@ const ApiKeySettings = ({ onKeyChange }: ApiKeySettingsProps) => {
     setApiKey("");
     setIsEditing(false);
     onKeyChange?.(true);
-    toast({ title: "API key saved", description: "Your key is stored locally in this browser." });
+    toast({ title: "API key saved", description: "Stored locally in this browser." });
   };
 
   const handleRemove = () => {
@@ -68,109 +69,160 @@ const ApiKeySettings = ({ onKeyChange }: ApiKeySettingsProps) => {
     toast({ title: "API key removed" });
   };
 
+  // Saved state (compact)
   if (savedKey && !isEditing) {
     return (
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <Card className="border-border/50 bg-card">
-          <CardContent className="flex items-center justify-between py-4">
+      <Card className="border-green-500/30 bg-green-500/5">
+        <CardContent className="py-3 px-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10">
-                <Key className="h-4 w-4 text-amber-500" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
+                <Check className="h-3.5 w-3.5 text-green-500" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-foreground">
-                  Your Anthropic API Key
-                </p>
-                <p className="text-xs text-muted-foreground font-mono">
+                <p className="text-sm font-semibold text-foreground">Anthropic</p>
+                <p className="text-[11px] text-muted-foreground font-mono">
                   {showKey ? savedKey : maskKey(savedKey)}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowKey(!showKey)}
-                className="h-8 w-8"
+                className="h-7 w-7 text-muted-foreground"
               >
                 {showKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-                className="text-muted-foreground"
+                size="icon"
+                onClick={() => setShowInfo(!showInfo)}
+                className="h-7 w-7 text-muted-foreground"
               >
-                Change
+                {showInfo ? <X className="h-3 w-3" /> : <Info className="h-3 w-3" />}
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleRemove}
-                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                className="h-7 w-7 text-muted-foreground hover:text-destructive"
               >
                 <X className="h-3 w-3" />
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+          </div>
+          <AnimatePresence>
+            {showInfo && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <p className="mt-2 pt-2 border-t border-green-500/10 text-[11px] text-muted-foreground">
+                  Your own API key is used for generation. Stored locally in your browser only. <button onClick={() => setIsEditing(true)} className="underline hover:text-foreground">Change key</button>
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+      </Card>
     );
   }
 
+  // Input state
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-      <Card className="border-border/50 bg-card">
-        <CardContent className="py-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
-              <Key className="h-4 w-4 text-amber-500" />
+    <Card className="border-border/50 bg-card">
+      <CardContent className="py-3 px-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10">
+              <Key className="h-3.5 w-3.5 text-amber-500" />
             </div>
-            <div className="flex-1 space-y-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  Anthropic API Key <span className="text-xs font-normal text-muted-foreground">(optional)</span>
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Use your own key to generate designs. Stored locally in your browser only.
-                </p>
-              </div>
-              <div className="flex gap-2">
+            <p className="text-sm font-semibold text-foreground">
+              Anthropic <span className="text-[10px] font-normal text-muted-foreground">(optional)</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowInfo(!showInfo)}
+              className="h-7 w-7 text-muted-foreground"
+            >
+              {showInfo ? <X className="h-3 w-3" /> : <Info className="h-3 w-3" />}
+            </Button>
+            {!isEditing && !savedKey && (
+              <Button onClick={() => setIsEditing(true)} size="sm" variant="outline" className="h-7 text-xs">
+                Add key
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <AnimatePresence>
+          {showInfo && !isEditing && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <p className="mt-2 pt-2 border-t border-border/50 text-[11px] text-muted-foreground">
+                Add your own Anthropic API key to use your credits for generation. Stored locally in your browser.
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {isEditing && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-3 flex gap-2">
                 <Input
                   type={showKey ? "text" : "password"}
                   placeholder="sk-ant-..."
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  className="font-mono text-sm"
+                  className="font-mono text-xs h-8"
                   onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                  autoFocus
                 />
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowKey(!showKey)}
-                  className="shrink-0"
+                  className="shrink-0 h-8 w-8"
                 >
-                  {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                 </Button>
-                <Button onClick={handleSave} disabled={!apiKey.trim()} className="shrink-0 gap-2">
-                  <Check className="h-4 w-4" />
+                <Button onClick={handleSave} disabled={!apiKey.trim()} size="sm" className="shrink-0 h-8 text-xs">
                   Save
                 </Button>
-                {isEditing && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => { setIsEditing(false); setApiKey(""); }}
-                    className="shrink-0"
-                  >
-                    Cancel
-                  </Button>
-                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setIsEditing(false); setApiKey(""); }}
+                  className="shrink-0 h-8 text-xs"
+                >
+                  Cancel
+                </Button>
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CardContent>
+    </Card>
   );
 };
 
