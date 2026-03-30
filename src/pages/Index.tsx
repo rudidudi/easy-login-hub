@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ArrowRight, Figma, Terminal, Puzzle, Zap, Shield, Clock } from "lucide-react";
+import { ArrowRight, Sparkles, Terminal, Puzzle, Zap, Shield, Clock } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -42,16 +42,16 @@ const Index = () => {
             className="mx-auto max-w-3xl text-center"
           >
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/50 bg-secondary/50 px-4 py-1.5 text-sm font-medium text-muted-foreground">
-              <Figma className="h-3.5 w-3.5" />
-              Prompt to Figma
+              <Sparkles className="h-3.5 w-3.5" />
+              Prompt to Design
             </div>
             <h1 className="text-5xl font-black leading-[1.08] tracking-tight text-foreground sm:text-7xl">
               Describe it.
               <br />
-              <span className="text-[#A259FF]">Figma builds it.</span>
+              <span className="text-[#A259FF]">AI designs it.</span>
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-              Turn a text prompt into a complete landing page on your Figma canvas. Powered by Claude AI and the Figma Plugin API — no manual design work needed.
+              Turn a text prompt into a complete landing page in your favorite design tool. Powered by Claude AI — no manual design work needed.
             </p>
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Button
