@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import PromptForm, { GenerationMode } from "@/components/PromptForm";
 import FigmaConnect from "@/components/FigmaConnect";
 import ApiKeySettings, { getStoredApiKey } from "@/components/ApiKeySettings";
+import ClaudeCodeConnect, { getStoredPairCode } from "@/components/ClaudeCodeConnect";
 import { useToast } from "@/hooks/use-toast";
 import { getFigmaConnection } from "@/lib/figma";
 
@@ -22,6 +23,7 @@ const Dashboard = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastPrompt, setLastPrompt] = useState<string | null>(null);
   const [figmaConnected, setFigmaConnected] = useState(false);
+  const [claudeCodeConnected, setClaudeCodeConnected] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -55,10 +57,22 @@ const Dashboard = () => {
     setGenerationMode(mode);
     setIsGenerating(true);
 
-    if (mode === "mcp") {
-      // MCP mode: call the agent server with Figma token for direct MCP generation
+    if (mode === "mcp" || mode === "claude-code") {
+      // MCP/Claude Code mode: call the agent server with Figma MCP token
+      const pairCode = mode === "claude-code" ? getStoredPairCode() : null;
       const figmaConnection = getFigmaConnection();
-      if (!figmaConnection?.access_token) {
+
+      if (mode === "claude-code" && !pairCode) {
+        toast({
+          title: "Claude Code not linked",
+          description: "Link your Claude Code first via the Connections panel.",
+          variant: "destructive",
+        });
+        setIsGenerating(false);
+        return;
+      }
+
+      if (mode === "mcp" && !figmaConnection?.access_token) {
         toast({
           title: "Figma not connected",
           description: "Connect your Figma account to use MCP generation.",
@@ -69,7 +83,7 @@ const Dashboard = () => {
       }
 
       toast({
-        title: "Generating via MCP...",
+        title: mode === "claude-code" ? "Generating via Claude Code..." : "Generating via MCP...",
         description: "Creating your landing page directly in Figma. This may take a few minutes.",
       });
 
@@ -80,7 +94,8 @@ const Dashboard = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             prompt,
-            figma_access_token: figmaConnection.access_token,
+            ...(mode === "claude-code" && pairCode && { pair_code: pairCode }),
+            ...(mode === "mcp" && figmaConnection && { figma_access_token: figmaConnection.access_token }),
             ...(userApiKey && { api_key: userApiKey }),
           }),
         });
@@ -89,7 +104,7 @@ const Dashboard = () => {
 
         if (!response.ok || data.error) {
           toast({
-            title: "MCP generation failed",
+            title: "Generation failed",
             description: data.error || "Something went wrong. Please try again.",
             variant: "destructive",
           });
@@ -103,7 +118,7 @@ const Dashboard = () => {
       } catch (err: any) {
         toast({
           title: "Error",
-          description: err.message || "MCP generation failed. Please try again.",
+          description: err.message || "Generation failed. Please try again.",
           variant: "destructive",
         });
       } finally {
@@ -211,6 +226,9 @@ const Dashboard = () => {
               {/* Figma */}
               <FigmaConnect onConnectionChange={setFigmaConnected} />
 
+              {/* Claude Code */}
+              <ClaudeCodeConnect onConnectionChange={setClaudeCodeConnected} />
+
               {/* Canvas — Coming Soon */}
               <Card className="border-border/50 bg-card opacity-60">
                 <CardContent className="py-3 px-4">
@@ -246,7 +264,7 @@ const Dashboard = () => {
             </motion.div>
 
             <div className="mt-8">
-              <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} activeMode={generationMode} disabled={!figmaConnected} />
+              <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} activeMode={generationMode} disabled={!figmaConnected} claudeCodeConnected={claudeCodeConnected} />
             </div>
 
             {jobCode && (

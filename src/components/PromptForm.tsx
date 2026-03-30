@@ -3,19 +3,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Figma, Loader2, Puzzle, Terminal } from "lucide-react";
+import { Figma, Loader2, Puzzle, Terminal, Code2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export type GenerationMode = "plugin" | "mcp";
+export type GenerationMode = "plugin" | "mcp" | "claude-code";
 
 interface PromptFormProps {
   onSubmit: (prompt: string, mode: GenerationMode) => void;
   isGenerating?: boolean;
   activeMode?: GenerationMode | null;
   disabled?: boolean;
+  claudeCodeConnected?: boolean;
 }
 
-const PromptForm = ({ onSubmit, isGenerating = false, activeMode = null, disabled = false }: PromptFormProps) => {
+const PromptForm = ({ onSubmit, isGenerating = false, activeMode = null, disabled = false, claudeCodeConnected = false }: PromptFormProps) => {
   const [prompt, setPrompt] = useState("");
   const [progress, setProgress] = useState(0);
 
@@ -27,7 +28,6 @@ const PromptForm = ({ onSubmit, isGenerating = false, activeMode = null, disable
   // Simulate progress while generating
   useEffect(() => {
     if (!isGenerating) {
-      // When done, flash to 100 then reset
       if (progress > 0) {
         setProgress(100);
         const timer = setTimeout(() => setProgress(0), 500);
@@ -39,12 +39,11 @@ const PromptForm = ({ onSubmit, isGenerating = false, activeMode = null, disable
     setProgress(0);
     const start = Date.now();
 
-    // MCP is instant, plugin takes ~60-120s
-    const estimatedMs = activeMode === "mcp" ? 2000 : 90000;
+    // claude-code/mcp ~120s, plugin ~90s
+    const estimatedMs = activeMode === "plugin" ? 90000 : 120000;
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - start;
-      // Asymptotic curve: approaches 95% but never reaches 100%
       const pct = Math.min(95, (elapsed / estimatedMs) * 100 * (1 - elapsed / (elapsed + estimatedMs)));
       setProgress(Math.round(pct));
     }, 300);
@@ -52,8 +51,12 @@ const PromptForm = ({ onSubmit, isGenerating = false, activeMode = null, disable
     return () => clearInterval(interval);
   }, [isGenerating, activeMode]);
 
-  const modeLabel = activeMode === "plugin" ? "Generating with Plugin" : "Generating with MCP";
-  const ModeIcon = activeMode === "plugin" ? Puzzle : Terminal;
+  const modeLabels: Record<string, string> = {
+    plugin: "Generating with Plugin",
+    mcp: "Generating with MCP",
+    "claude-code": "Generating with Claude Code",
+  };
+  const modeLabel = activeMode ? modeLabels[activeMode] || "Generating..." : "Generating...";
 
   return (
     <motion.div
@@ -110,11 +113,9 @@ const PromptForm = ({ onSubmit, isGenerating = false, activeMode = null, disable
                         <Progress value={progress} className="mt-2 h-1.5" />
                       </div>
                     </div>
-                    {activeMode === "plugin" && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        Claude is designing your page. This usually takes 1–2 minutes.
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground text-center">
+                      Claude is designing your page. This usually takes 1–2 minutes.
+                    </p>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -128,17 +129,17 @@ const PromptForm = ({ onSubmit, isGenerating = false, activeMode = null, disable
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                       Choose generation method
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <Button
                         onClick={() => handleSubmit("plugin")}
                         disabled={!prompt.trim() || disabled}
                         className="gap-2 h-auto py-3 px-4 bg-[#A259FF] hover:bg-[#8B3FE0] text-white"
                       >
-                        <Puzzle className="h-4 w-4" />
+                        <Puzzle className="h-4 w-4 shrink-0" />
                         <div className="text-left">
-                          <div className="font-semibold text-sm">Generate with Plugin</div>
+                          <div className="font-semibold text-sm">Plugin</div>
                           <div className="text-xs opacity-80 font-normal">
-                            Use the Figma plugin to render
+                            Via Figma plugin
                           </div>
                         </div>
                       </Button>
@@ -148,11 +149,25 @@ const PromptForm = ({ onSubmit, isGenerating = false, activeMode = null, disable
                         variant="outline"
                         className="gap-2 h-auto py-3 px-4 border-border/50"
                       >
-                        <Terminal className="h-4 w-4" />
+                        <Terminal className="h-4 w-4 shrink-0" />
                         <div className="text-left">
-                          <div className="font-semibold text-sm">Generate with MCP</div>
+                          <div className="font-semibold text-sm">MCP</div>
                           <div className="text-xs text-muted-foreground font-normal">
-                            Creates directly in your Figma
+                            Direct to Figma
+                          </div>
+                        </div>
+                      </Button>
+                      <Button
+                        onClick={() => handleSubmit("claude-code")}
+                        disabled={!prompt.trim() || disabled || !claudeCodeConnected}
+                        variant="outline"
+                        className={`gap-2 h-auto py-3 px-4 border-border/50 ${!claudeCodeConnected ? "opacity-50" : ""}`}
+                      >
+                        <Code2 className="h-4 w-4 shrink-0" />
+                        <div className="text-left">
+                          <div className="font-semibold text-sm">Claude Code</div>
+                          <div className="text-xs text-muted-foreground font-normal">
+                            {claudeCodeConnected ? "Via MCP token" : "Link required"}
                           </div>
                         </div>
                       </Button>
