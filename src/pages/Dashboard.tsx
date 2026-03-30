@@ -8,6 +8,7 @@ import { LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 import PromptForm, { GenerationMode } from "@/components/PromptForm";
 import FigmaConnect from "@/components/FigmaConnect";
+import ApiKeySettings, { getStoredApiKey } from "@/components/ApiKeySettings";
 import { useToast } from "@/hooks/use-toast";
 import { getFigmaConnection } from "@/lib/figma";
 
@@ -71,10 +72,11 @@ const Dashboard = () => {
     });
 
     try {
+      const userApiKey = getStoredApiKey();
       const response = await fetch(`${AGENT_URL}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, ...(userApiKey && { api_key: userApiKey }) }),
       });
 
       const data = await response.json();
@@ -158,6 +160,10 @@ const Dashboard = () => {
 
         <div className="mt-8">
           <FigmaConnect onConnectionChange={setFigmaConnected} />
+        </div>
+
+        <div className="mt-4">
+          <ApiKeySettings />
         </div>
 
         <div className="mt-6">
