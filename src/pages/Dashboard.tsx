@@ -155,14 +155,14 @@ const Dashboard = () => {
           >
             <div className="sticky top-24 space-y-2">
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest px-1 mb-4">
-                Integrations
+                Connections
               </h2>
-
-              {/* Figma */}
-              <FigmaConnect onConnectionChange={setFigmaConnected} />
 
               {/* Anthropic */}
               <ApiKeySettings />
+
+              {/* Figma */}
+              <FigmaConnect onConnectionChange={setFigmaConnected} />
 
               {/* Canvas — Coming Soon */}
               <Card className="border-border/50 bg-card opacity-60">
