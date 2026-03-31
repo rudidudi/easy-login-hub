@@ -144,6 +144,20 @@ const Dashboard = () => {
 
       {/* Two-column layout */}
       <div className="mx-auto max-w-[1400px] px-6 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8"
+        >
+          <h1 className="text-3xl font-black tracking-tight text-foreground">
+            Welcome back, {displayName.split(" ")[0]} 👋
+          </h1>
+          <p className="mt-1 text-base text-muted-foreground">
+            Describe your idea and let AI bring it to life in your design tool.
+          </p>
+        </motion.div>
+
         <div className="flex gap-8">
 
           {/* Left sidebar — Integrations */}
@@ -185,20 +199,7 @@ const Dashboard = () => {
 
           {/* Right content — Prompt & Results */}
           <main className="flex-1 min-w-0">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h1 className="text-3xl font-black tracking-tight text-foreground">
-                Welcome back, {displayName.split(" ")[0]} 👋
-              </h1>
-              <p className="mt-1 text-base text-muted-foreground">
-                Describe your landing page and generate it directly in Figma.
-              </p>
-            </motion.div>
-
-            <div className="mt-8">
+            <div>
               <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} disabled={!figmaConnected} />
             </div>
 
