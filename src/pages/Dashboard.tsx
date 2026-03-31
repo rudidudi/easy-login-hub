@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { LogOut, Palette, Menu } from "lucide-react";
+import { LogOut, Palette, Menu, PenLine, Eye } from "lucide-react";
 import { motion } from "framer-motion";
 import PromptForm from "@/components/PromptForm";
 import FigmaConnect from "@/components/FigmaConnect";
@@ -28,6 +28,7 @@ const Dashboard = () => {
   const [figmaConnected, setFigmaConnected] = useState(() => !!getFigmaConnection());
   const [mcpPrompt, setMcpPrompt] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"create" | "view">("create");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -199,56 +200,99 @@ const Dashboard = () => {
 
       {/* Main content */}
       <div className="mx-auto max-w-3xl px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8"
-        >
-          <h1 className="text-3xl font-black tracking-tight text-foreground">
-            What are we designing today?
-          </h1>
-          <p className="mt-1 text-base text-muted-foreground">
-            Describe your idea and let AI bring it to life in your design tool.
-          </p>
-        </motion.div>
-
-        {/* Prompt Form */}
-        <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} disabled={!figmaConnected} />
-
-        {/* Results */}
-        {mcpPrompt && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6"
+        {/* Tabs */}
+        <div className="flex items-center gap-1 rounded-xl bg-muted p-1 mb-8">
+          <button
+            onClick={() => setActiveTab("create")}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-colors ${
+              activeTab === "create"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
-            <h3 className="text-sm font-semibold text-emerald-500 uppercase tracking-wide">
-              Design created in Figma
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Your landing page has been created directly in your Figma account. Open Figma to see it.
-            </p>
-          </motion.div>
-        )}
-
-        {lastPrompt && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-6 rounded-xl border border-border/50 bg-card p-6"
+            <PenLine className="h-4 w-4" />
+            Create
+          </button>
+          <button
+            onClick={() => setActiveTab("view")}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold transition-colors ${
+              activeTab === "view"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              Last prompt
-            </h3>
-            <p className="mt-2 text-sm text-foreground whitespace-pre-wrap">{lastPrompt}</p>
-          </motion.div>
-        )}
-
-        {/* Recent Figma files */}
-        <div className="mt-10">
-          <FigmaFiles connected={figmaConnected} />
+            <Eye className="h-4 w-4" />
+            View
+          </button>
         </div>
+
+        {activeTab === "create" ? (
+          <motion.div
+            key="create"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="mb-6">
+              <h1 className="text-3xl font-black tracking-tight text-foreground">
+                What are we designing today?
+              </h1>
+              <p className="mt-1 text-base text-muted-foreground">
+                Describe your idea and let AI bring it to life in your design tool.
+              </p>
+            </div>
+
+            {/* Prompt Form */}
+            <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} disabled={!figmaConnected} />
+
+            {/* Results */}
+            {mcpPrompt && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6"
+              >
+                <h3 className="text-sm font-semibold text-emerald-500 uppercase tracking-wide">
+                  Design created in Figma
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Your landing page has been created directly in your Figma account. Open Figma to see it.
+                </p>
+              </motion.div>
+            )}
+
+            {lastPrompt && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 rounded-xl border border-border/50 bg-card p-6"
+              >
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  Last prompt
+                </h3>
+                <p className="mt-2 text-sm text-foreground whitespace-pre-wrap">{lastPrompt}</p>
+              </motion.div>
+            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="view"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="mb-6">
+              <h1 className="text-3xl font-black tracking-tight text-foreground">
+                Your Figma files
+              </h1>
+              <p className="mt-1 text-base text-muted-foreground">
+                Browse your recent designs. Click to open in Figma.
+              </p>
+            </div>
+
+            <FigmaFiles connected={figmaConnected} />
+          </motion.div>
+        )}
       </div>
     </div>
   );
