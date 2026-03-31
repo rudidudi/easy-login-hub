@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import PromptForm from "@/components/PromptForm";
 import FigmaConnect from "@/components/FigmaConnect";
 import ApiKeySettings, { getStoredApiKey } from "@/components/ApiKeySettings";
+import FigmaFiles from "@/components/FigmaFiles";
 import { useToast } from "@/hooks/use-toast";
 import { getFigmaConnection } from "@/lib/figma";
 
@@ -243,6 +244,11 @@ const Dashboard = () => {
             <p className="mt-2 text-sm text-foreground whitespace-pre-wrap">{lastPrompt}</p>
           </motion.div>
         )}
+
+        {/* Recent Figma files */}
+        <div className="mt-10">
+          <FigmaFiles connected={figmaConnected} />
+        </div>
       </div>
     </div>
   );
