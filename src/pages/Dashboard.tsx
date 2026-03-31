@@ -5,8 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Palette } from "lucide-react";
-import { motion } from "framer-motion";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { LogOut, Palette, ChevronDown, Settings2, CheckCircle2, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import PromptForm from "@/components/PromptForm";
 import FigmaConnect from "@/components/FigmaConnect";
 import ApiKeySettings, { getStoredApiKey } from "@/components/ApiKeySettings";
@@ -14,6 +15,88 @@ import { useToast } from "@/hooks/use-toast";
 import { getFigmaConnection } from "@/lib/figma";
 
 const AGENT_URL = "https://designfolio-agent-production.up.railway.app";
+
+/* ── Collapsible Connections Panel ─────────────────────────── */
+
+const ConnectionsPanel = ({
+  figmaConnected,
+  onFigmaConnectionChange,
+}: {
+  figmaConnected: boolean;
+  onFigmaConnectionChange: (v: boolean) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const apiKey = getStoredApiKey();
+  const connectedCount = [figmaConnected, !!apiKey].filter(Boolean).length;
+  const totalCount = 2; // Figma + API key (Canvas is coming soon)
+  const allConnected = connectedCount === totalCount;
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger asChild>
+        <button className="flex w-full items-center justify-between rounded-xl border border-border/50 bg-card px-5 py-3.5 transition-colors hover:bg-accent/50 group">
+          <div className="flex items-center gap-3">
+            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${allConnected ? "bg-emerald-500/10" : "bg-orange-500/10"}`}>
+              {allConnected ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              ) : (
+                <Settings2 className="h-4 w-4 text-orange-500" />
+              )}
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-foreground">Connections</p>
+              <p className="text-xs text-muted-foreground">
+                {allConnected
+                  ? "All services connected"
+                  : `${connectedCount} of ${totalCount} connected`}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {!allConnected && (
+              <span className="flex items-center gap-1 rounded-full bg-orange-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-orange-500 uppercase tracking-wide">
+                <AlertCircle className="h-3 w-3" />
+                Setup needed
+              </span>
+            )}
+            <ChevronDown
+              className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            />
+          </div>
+        </button>
+      </CollapsibleTrigger>
+
+      <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+        <div className="mt-2 space-y-2">
+          {/* Anthropic API Key */}
+          <ApiKeySettings />
+
+          {/* Figma */}
+          <FigmaConnect onConnectionChange={onFigmaConnectionChange} />
+
+          {/* Canvas — Coming Soon */}
+          <Card className="border-border/50 bg-card opacity-60">
+            <CardContent className="py-3 px-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10">
+                    <Palette className="h-3.5 w-3.5 text-orange-500" />
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">Canvas</p>
+                </div>
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                  Soon
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
+/* ── Dashboard ─────────────────────────────────────────────── */
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -142,13 +225,13 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Two-column layout */}
-      <div className="mx-auto max-w-[1400px] px-6 py-8">
+      {/* Main content */}
+      <div className="mx-auto max-w-3xl px-6 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-8"
+          className="mb-6"
         >
           <h1 className="text-3xl font-black tracking-tight text-foreground">
             Welcome back, {displayName.split(" ")[0]} 👋
@@ -158,80 +241,50 @@ const Dashboard = () => {
           </p>
         </motion.div>
 
-        <div className="flex gap-8">
+        {/* Collapsible Connections */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="mb-6"
+        >
+          <ConnectionsPanel
+            figmaConnected={figmaConnected}
+            onFigmaConnectionChange={setFigmaConnected}
+          />
+        </motion.div>
 
-          {/* Left sidebar — Integrations */}
-          <motion.aside
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4 }}
-            className="w-80 shrink-0"
+        {/* Prompt Form */}
+        <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} disabled={!figmaConnected} />
+
+        {/* Results */}
+        {mcpPrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6"
           >
-            <div className="sticky top-24 space-y-2">
-              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest px-1 mb-4">
-                Connections
-              </h2>
+            <h3 className="text-sm font-semibold text-emerald-500 uppercase tracking-wide">
+              Design created in Figma
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Your landing page has been created directly in your Figma account. Open Figma to see it.
+            </p>
+          </motion.div>
+        )}
 
-              {/* Anthropic */}
-              <ApiKeySettings />
-
-              {/* Figma */}
-              <FigmaConnect onConnectionChange={setFigmaConnected} />
-
-              {/* Canvas — Coming Soon */}
-              <Card className="border-border/50 bg-card opacity-60">
-                <CardContent className="py-3 px-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10">
-                        <Palette className="h-3.5 w-3.5 text-orange-500" />
-                      </div>
-                      <p className="text-sm font-semibold text-foreground">Canvas</p>
-                    </div>
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                      Soon
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </motion.aside>
-
-          {/* Right content — Prompt & Results */}
-          <main className="flex-1 min-w-0">
-            <div>
-              <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} disabled={!figmaConnected} />
-            </div>
-
-            {mcpPrompt && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6"
-              >
-                <h3 className="text-sm font-semibold text-emerald-500 uppercase tracking-wide">
-                  Design created in Figma
-                </h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Your landing page has been created directly in your Figma account. Open Figma to see it.
-                </p>
-              </motion.div>
-            )}
-
-            {lastPrompt && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-6 rounded-xl border border-border/50 bg-card p-6"
-              >
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  Last prompt
-                </h3>
-                <p className="mt-2 text-sm text-foreground whitespace-pre-wrap">{lastPrompt}</p>
-              </motion.div>
-            )}
-          </main>
-        </div>
+        {lastPrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 rounded-xl border border-border/50 bg-card p-6"
+          >
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Last prompt
+            </h3>
+            <p className="mt-2 text-sm text-foreground whitespace-pre-wrap">{lastPrompt}</p>
+          </motion.div>
+        )}
       </div>
     </div>
   );
