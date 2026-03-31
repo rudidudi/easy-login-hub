@@ -25,7 +25,7 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastPrompt, setLastPrompt] = useState<string | null>(null);
-  const [figmaConnected, setFigmaConnected] = useState(false);
+  const [figmaConnected, setFigmaConnected] = useState(() => !!getFigmaConnection());
   const [mcpPrompt, setMcpPrompt] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const { toast } = useToast();
