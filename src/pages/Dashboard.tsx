@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { LogOut, Palette, Menu, CheckCircle2, AlertCircle } from "lucide-react";
+import { LogOut, Palette, Menu } from "lucide-react";
 import { motion } from "framer-motion";
 import PromptForm from "@/components/PromptForm";
 import FigmaConnect from "@/components/FigmaConnect";
@@ -165,22 +165,7 @@ const Dashboard = () => {
           <SheetHeader className="text-left pb-6">
             <SheetTitle className="text-lg font-bold">Connections</SheetTitle>
             <SheetDescription>
-              {(() => {
-                const apiKey = getStoredApiKey();
-                const connectedCount = [figmaConnected, !!apiKey].filter(Boolean).length;
-                const allConnected = connectedCount === 2;
-                return allConnected ? (
-                  <span className="inline-flex items-center gap-1.5 text-emerald-500">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    All services connected
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 text-orange-500">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    {connectedCount} of 2 connected — setup needed
-                  </span>
-                );
-              })()}
+              Manage your service integrations
             </SheetDescription>
           </SheetHeader>
 
