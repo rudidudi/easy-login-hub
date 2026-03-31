@@ -7,10 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Palette } from "lucide-react";
 import { motion } from "framer-motion";
-import PromptForm, { GenerationMode } from "@/components/PromptForm";
+import PromptForm from "@/components/PromptForm";
 import FigmaConnect from "@/components/FigmaConnect";
 import ApiKeySettings, { getStoredApiKey } from "@/components/ApiKeySettings";
-import ClaudeCodeConnect, { getStoredPairCode } from "@/components/ClaudeCodeConnect";
 import { useToast } from "@/hooks/use-toast";
 import { getFigmaConnection } from "@/lib/figma";
 
@@ -23,7 +22,7 @@ const Dashboard = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastPrompt, setLastPrompt] = useState<string | null>(null);
   const [figmaConnected, setFigmaConnected] = useState(false);
-  const [claudeCodeConnected, setClaudeCodeConnected] = useState(false);
+  const [mcpPrompt, setMcpPrompt] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -46,98 +45,38 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const [jobCode, setJobCode] = useState<string | null>(null);
-  const [generationMode, setGenerationMode] = useState<GenerationMode | null>(null);
-  const [mcpPrompt, setMcpPrompt] = useState<string | null>(null);
-
-  const handlePromptSubmit = async (prompt: string, mode: GenerationMode) => {
+  const handlePromptSubmit = async (prompt: string) => {
     setLastPrompt(prompt);
-    setJobCode(null);
     setMcpPrompt(null);
-    setGenerationMode(mode);
     setIsGenerating(true);
 
-    if (mode === "mcp" || mode === "claude-code") {
-      // MCP/Claude Code mode: call the agent server with Figma MCP token
-      const pairCode = mode === "claude-code" ? getStoredPairCode() : null;
-      const figmaConnection = getFigmaConnection();
+    const figmaConnection = getFigmaConnection();
 
-      if (mode === "claude-code" && !pairCode) {
-        toast({
-          title: "Claude Code not linked",
-          description: "Link your Claude Code first via the Connections panel.",
-          variant: "destructive",
-        });
-        setIsGenerating(false);
-        return;
-      }
-
-      if (mode === "mcp" && !figmaConnection?.access_token) {
-        toast({
-          title: "Figma not connected",
-          description: "Connect your Figma account to use MCP generation.",
-          variant: "destructive",
-        });
-        setIsGenerating(false);
-        return;
-      }
-
+    if (!figmaConnection?.access_token) {
       toast({
-        title: mode === "claude-code" ? "Generating via Claude Code..." : "Generating via MCP...",
-        description: "Creating your landing page directly in Figma. This may take a few minutes.",
+        title: "Figma not connected",
+        description: "Connect your Figma account to generate designs.",
+        variant: "destructive",
       });
-
-      try {
-        const userApiKey = getStoredApiKey();
-        const response = await fetch(`${AGENT_URL}/generate-mcp`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prompt,
-            ...(mode === "claude-code" && pairCode && { pair_code: pairCode }),
-            ...(mode === "mcp" && figmaConnection && { figma_access_token: figmaConnection.access_token }),
-            ...(userApiKey && { api_key: userApiKey }),
-          }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok || data.error) {
-          toast({
-            title: "Generation failed",
-            description: data.error || "Something went wrong. Please try again.",
-            variant: "destructive",
-          });
-        } else {
-          setMcpPrompt(prompt);
-          toast({
-            title: "Design created!",
-            description: "Your landing page has been created directly in Figma.",
-          });
-        }
-      } catch (err: any) {
-        toast({
-          title: "Error",
-          description: err.message || "Generation failed. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsGenerating(false);
-      }
+      setIsGenerating(false);
       return;
     }
 
     toast({
-      title: "Generating your landing page...",
-      description: "Claude is designing your page. This may take a couple of minutes.",
+      title: "Generating your design...",
+      description: "Creating your landing page directly in Figma. This may take a few minutes.",
     });
 
     try {
       const userApiKey = getStoredApiKey();
-      const response = await fetch(`${AGENT_URL}/generate`, {
+      const response = await fetch(`${AGENT_URL}/generate-mcp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, ...(userApiKey && { api_key: userApiKey }) }),
+        body: JSON.stringify({
+          prompt,
+          figma_access_token: figmaConnection.access_token,
+          ...(userApiKey && { api_key: userApiKey }),
+        }),
       });
 
       const data = await response.json();
@@ -148,18 +87,17 @@ const Dashboard = () => {
           description: data.error || "Something went wrong. Please try again.",
           variant: "destructive",
         });
-        return;
+      } else {
+        setMcpPrompt(prompt);
+        toast({
+          title: "Design created!",
+          description: "Your landing page has been created directly in Figma.",
+        });
       }
-
-      setJobCode(data.job_code);
-      toast({
-        title: "Design ready!",
-        description: `Open the Designfolio plugin in Figma and enter code: ${data.job_code}`,
-      });
     } catch (err: any) {
       toast({
         title: "Error",
-        description: err.message || "Failed to generate. Please try again.",
+        description: err.message || "Generation failed. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -226,9 +164,6 @@ const Dashboard = () => {
               {/* Figma */}
               <FigmaConnect onConnectionChange={setFigmaConnected} />
 
-              {/* Claude Code */}
-              <ClaudeCodeConnect onConnectionChange={setClaudeCodeConnected} />
-
               {/* Canvas — Coming Soon */}
               <Card className="border-border/50 bg-card opacity-60">
                 <CardContent className="py-3 px-4">
@@ -264,41 +199,8 @@ const Dashboard = () => {
             </motion.div>
 
             <div className="mt-8">
-              <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} activeMode={generationMode} disabled={!figmaConnected} claudeCodeConnected={claudeCodeConnected} />
+              <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} disabled={!figmaConnected} />
             </div>
-
-            {jobCode && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-6 rounded-xl border border-[#A259FF]/30 bg-[#A259FF]/5 p-6"
-              >
-                <h3 className="text-sm font-semibold text-[#A259FF] uppercase tracking-wide">
-                  Your design is ready
-                </h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Open the <strong>Designfolio</strong> plugin in Figma and enter this code:
-                </p>
-                <div className="mt-4 flex items-center gap-4">
-                  <span className="rounded-lg bg-background px-6 py-3 font-mono text-2xl font-bold tracking-[0.3em] text-foreground border border-border">
-                    {jobCode}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      navigator.clipboard.writeText(jobCode);
-                      toast({ title: "Copied!", description: "Code copied to clipboard." });
-                    }}
-                  >
-                    Copy
-                  </Button>
-                </div>
-                <p className="mt-4 text-xs text-muted-foreground">
-                  Code expires in 1 hour. Run the Designfolio plugin from Figma's Plugins menu.
-                </p>
-              </motion.div>
-            )}
 
             {mcpPrompt && (
               <motion.div
@@ -310,7 +212,7 @@ const Dashboard = () => {
                   Design created in Figma
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Your landing page has been created directly in your Figma account via MCP. Open Figma to see it.
+                  Your landing page has been created directly in your Figma account. Open Figma to see it.
                 </p>
               </motion.div>
             )}

@@ -3,26 +3,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Figma, Loader2, Puzzle, Terminal, Code2 } from "lucide-react";
+import { Figma, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export type GenerationMode = "plugin" | "mcp" | "claude-code";
-
 interface PromptFormProps {
-  onSubmit: (prompt: string, mode: GenerationMode) => void;
+  onSubmit: (prompt: string) => void;
   isGenerating?: boolean;
-  activeMode?: GenerationMode | null;
   disabled?: boolean;
-  claudeCodeConnected?: boolean;
 }
 
-const PromptForm = ({ onSubmit, isGenerating = false, activeMode = null, disabled = false, claudeCodeConnected = false }: PromptFormProps) => {
+const PromptForm = ({ onSubmit, isGenerating = false, disabled = false }: PromptFormProps) => {
   const [prompt, setPrompt] = useState("");
   const [progress, setProgress] = useState(0);
 
-  const handleSubmit = (mode: GenerationMode) => {
+  const handleSubmit = () => {
     if (!prompt.trim() || isGenerating) return;
-    onSubmit(prompt.trim(), mode);
+    onSubmit(prompt.trim());
   };
 
   // Simulate progress while generating
@@ -38,9 +34,7 @@ const PromptForm = ({ onSubmit, isGenerating = false, activeMode = null, disable
 
     setProgress(0);
     const start = Date.now();
-
-    // claude-code/mcp ~120s, plugin ~90s
-    const estimatedMs = activeMode === "plugin" ? 90000 : 120000;
+    const estimatedMs = 120000;
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - start;
@@ -49,14 +43,7 @@ const PromptForm = ({ onSubmit, isGenerating = false, activeMode = null, disable
     }, 300);
 
     return () => clearInterval(interval);
-  }, [isGenerating, activeMode]);
-
-  const modeLabels: Record<string, string> = {
-    plugin: "Generating with Plugin",
-    mcp: "Generating with MCP",
-    "claude-code": "Generating with Claude Code",
-  };
-  const modeLabel = activeMode ? modeLabels[activeMode] || "Generating..." : "Generating...";
+  }, [isGenerating]);
 
   return (
     <motion.div
@@ -73,7 +60,7 @@ const PromptForm = ({ onSubmit, isGenerating = false, activeMode = null, disable
             <div>
               <CardTitle className="text-xl font-bold">Create a Landing Page</CardTitle>
               <CardDescription>
-                Describe your landing page and choose how to generate it
+                Describe your landing page and generate it directly in Figma
               </CardDescription>
             </div>
           </div>
@@ -107,71 +94,32 @@ const PromptForm = ({ onSubmit, isGenerating = false, activeMode = null, disable
                       <Loader2 className="h-4 w-4 animate-spin text-[#A259FF]" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-semibold text-foreground">{modeLabel}</span>
+                          <span className="text-sm font-semibold text-foreground">Generating design...</span>
                           <span className="text-xs text-muted-foreground tabular-nums">{progress}%</span>
                         </div>
                         <Progress value={progress} className="mt-2 h-1.5" />
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground text-center">
-                      Claude is designing your page. This usually takes 1–2 minutes.
+                      Claude is designing your page directly in Figma. This usually takes 1–2 minutes.
                     </p>
                   </motion.div>
                 ) : (
                   <motion.div
-                    key="buttons"
+                    key="button"
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -5 }}
                     transition={{ duration: 0.2 }}
-                    className="space-y-3"
                   >
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Choose generation method
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <Button
-                        onClick={() => handleSubmit("plugin")}
-                        disabled={!prompt.trim() || disabled}
-                        className="gap-2 h-auto py-3 px-4 bg-[#A259FF] hover:bg-[#8B3FE0] text-white"
-                      >
-                        <Puzzle className="h-4 w-4 shrink-0" />
-                        <div className="text-left">
-                          <div className="font-semibold text-sm">Plugin</div>
-                          <div className="text-xs opacity-80 font-normal">
-                            Via Figma plugin
-                          </div>
-                        </div>
-                      </Button>
-                      <Button
-                        onClick={() => handleSubmit("mcp")}
-                        disabled={!prompt.trim() || disabled}
-                        variant="outline"
-                        className="gap-2 h-auto py-3 px-4 border-border/50"
-                      >
-                        <Terminal className="h-4 w-4 shrink-0" />
-                        <div className="text-left">
-                          <div className="font-semibold text-sm">MCP</div>
-                          <div className="text-xs text-muted-foreground font-normal">
-                            Direct to Figma
-                          </div>
-                        </div>
-                      </Button>
-                      <Button
-                        onClick={() => handleSubmit("claude-code")}
-                        disabled={!prompt.trim() || disabled || !claudeCodeConnected}
-                        variant="outline"
-                        className={`gap-2 h-auto py-3 px-4 border-border/50 ${!claudeCodeConnected ? "opacity-50" : ""}`}
-                      >
-                        <Code2 className="h-4 w-4 shrink-0" />
-                        <div className="text-left">
-                          <div className="font-semibold text-sm">Claude Code</div>
-                          <div className="text-xs text-muted-foreground font-normal">
-                            {claudeCodeConnected ? "Via MCP token" : "Link required"}
-                          </div>
-                        </div>
-                      </Button>
-                    </div>
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={!prompt.trim() || disabled}
+                      className="w-full gap-2 h-11 bg-[#A259FF] hover:bg-[#8B3FE0] text-white font-semibold"
+                    >
+                      <Figma className="h-4 w-4" />
+                      Generate in Figma
+                    </Button>
                   </motion.div>
                 )}
               </AnimatePresence>
