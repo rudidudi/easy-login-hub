@@ -205,7 +205,7 @@ const Dashboard = () => {
           className="mb-8"
         >
           <h1 className="text-3xl font-black tracking-tight text-foreground">
-            Welcome back, {displayName.split(" ")[0]} 👋
+            What are we designing today?
           </h1>
           <p className="mt-1 text-base text-muted-foreground">
             Describe your idea and let AI bring it to life in your design tool.
