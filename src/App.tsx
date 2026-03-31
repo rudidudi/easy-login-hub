@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import FigmaCallback from "./pages/FigmaCallback.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
+import CookieBanner from "./components/CookieBanner.tsx";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <CookieBanner />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
