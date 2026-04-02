@@ -148,6 +148,9 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              Free Tier
+            </span>
             <Avatar className="h-9 w-9">
               <AvatarImage src={avatarUrl} />
               <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-bold">
