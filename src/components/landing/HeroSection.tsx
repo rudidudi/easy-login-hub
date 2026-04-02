@@ -148,7 +148,7 @@ const HeroSection = () => {
               className="absolute -bottom-4 -left-4 rounded-xl border border-border bg-card px-4 py-3 shadow-lg sm:-bottom-6 sm:-left-6"
             >
               <p className="text-xs font-medium text-muted-foreground">Generated in</p>
-              <p className="text-2xl font-black text-primary">~30s</p>
+              <p className="text-2xl font-black text-primary">~2 min</p>
             </motion.div>
           </motion.div>
         </div>
