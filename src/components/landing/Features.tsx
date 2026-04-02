@@ -68,7 +68,7 @@ const Features = () => (
           From Claude to Figma. From Claude to Canva.
         </h3>
         <p className="mx-auto mt-3 max-w-2xl text-muted-foreground leading-relaxed">
-          Designfolio bridges the gap between AI and design tools. Use <strong className="text-foreground">Claude to Figma</strong> to generate complete landing pages directly in your Figma workspace. Soon, <strong className="text-foreground">Claude to Canva</strong> will let you do the same in Canva — all from a single text prompt.
+          Designfolio bridges the gap between AI and design tools. Use <strong className="text-foreground">Claude to Figma</strong> to generate complete landing pages directly in your Figma workspace. Soon, <strong className="text-foreground">Claude to Canva</strong> will let you do the same in Canva. All from a single text prompt!
         </p>
       </motion.div>
     </div>
