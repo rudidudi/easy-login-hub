@@ -55,6 +55,22 @@ const Features = () => (
           </motion.div>
         ))}
       </div>
+
+      {/* SEO keyword section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="mt-20 rounded-2xl border border-border bg-card p-8 text-center"
+      >
+        <h3 className="text-2xl font-bold text-foreground">
+          From Claude to Figma. From Claude to Canva.
+        </h3>
+        <p className="mx-auto mt-3 max-w-2xl text-muted-foreground leading-relaxed">
+          Designfolio bridges the gap between AI and design tools. Use <strong className="text-foreground">Claude to Figma</strong> to generate complete landing pages directly in your Figma workspace. Soon, <strong className="text-foreground">Claude to Canva</strong> will let you do the same in Canva — all from a single text prompt.
+        </p>
+      </motion.div>
     </div>
   </section>
 );
