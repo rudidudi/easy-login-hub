@@ -63,7 +63,7 @@ const HeroSection = () => {
               <span className="text-primary">AI designs it.</span>
             </h1>
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">
-              Turn a text prompt into a complete landing page in your favorite design tool. Powered by Claude AI — no manual design work needed.
+              Turn a text prompt into a complete landing page in your favorite design tool like Figma and Canvas.<br />No manual design work needed.
             </p>
             <div className="mt-5 flex items-center gap-4 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
