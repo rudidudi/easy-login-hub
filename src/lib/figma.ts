@@ -16,7 +16,7 @@ export function getFigmaAuthUrl(state: string): string {
   const params = new URLSearchParams({
     client_id: FIGMA_CLIENT_ID,
     redirect_uri: FIGMA_REDIRECT_URI,
-    scope: "current_user:read,file_content:read,file_metadata:read,file_dev_resources:read,file_dev_resources:write,library_assets:read,library_content:read,team_library_content:read",
+    scope: "current_user:read,file_content:read,file_metadata:read,file_dev_resources:read,file_dev_resources:write,library_assets:read,library_content:read,team_library_content:read,projects:read",
     state,
     response_type: "code",
   });

@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, ExternalLink, FileImage, Plus, X, Figma } from "lucide-react";
+import { Loader2, ExternalLink, FileImage, Figma, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getFigmaConnection } from "@/lib/figma";
 
@@ -11,215 +11,267 @@ interface FigmaFile {
   name: string;
   thumbnail_url: string;
   last_modified: string;
+  project_name: string;
 }
 
-const STORAGE_KEY = "designfolio_figma_files";
-
-const getSavedFiles = (): FigmaFile[] => {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch {
-    return [];
-  }
-};
-
-const saveFiles = (files: FigmaFile[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
-};
-
-/** Extract file key from a Figma URL or raw key */
-const parseFileKey = (input: string): string | null => {
-  const trimmed = input.trim();
-  // Match figma.com/file/KEY or figma.com/design/KEY
-  const urlMatch = trimmed.match(/figma\.com\/(?:file|design)\/([a-zA-Z0-9]+)/);
-  if (urlMatch) return urlMatch[1];
-  // If it looks like a raw key (alphanumeric, 22+ chars)
-  if (/^[a-zA-Z0-9]{10,}$/.test(trimmed)) return trimmed;
-  return null;
-};
+const TEAM_ID_KEY = "designfolio_figma_team_id";
 
 const FigmaFiles = ({ connected }: { connected: boolean }) => {
-  const [files, setFiles] = useState<FigmaFile[]>(getSavedFiles);
-  const [urlInput, setUrlInput] = useState("");
+  const [teamId, setTeamId] = useState(() => localStorage.getItem(TEAM_ID_KEY) || "");
+  const [teamIdInput, setTeamIdInput] = useState("");
+  const [files, setFiles] = useState<FigmaFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleAddFile = async () => {
-    const key = parseFileKey(urlInput);
-    if (!key) {
-      setError("Paste a valid Figma file URL");
-      return;
-    }
-
-    if (files.some((f) => f.key === key)) {
-      setError("This file is already added");
-      return;
-    }
-
+  const fetchFiles = async (id: string) => {
     const connection = getFigmaConnection();
-    if (!connection?.access_token) {
-      setError("Connect Figma first");
-      return;
-    }
+    if (!connection?.access_token) return;
 
     setLoading(true);
     setError(null);
+    setFiles([]);
 
     try {
-      const res = await fetch(`https://api.figma.com/v1/files/${key}?depth=1`, {
+      // 1. Fetch all projects in the team
+      const projectsRes = await fetch(`https://api.figma.com/v1/teams/${id}/projects`, {
         headers: { Authorization: `Bearer ${connection.access_token}` },
       });
 
-      if (!res.ok) {
-        if (res.status === 404) setError("File not found — check the URL");
-        else if (res.status === 403 || res.status === 401) setError("No access — reconnect Figma or check permissions");
-        else setError("Could not load file");
+      if (!projectsRes.ok) {
+        if (projectsRes.status === 403 || projectsRes.status === 401) {
+          setError("Access denied — reconnect Figma or check the Team ID");
+        } else if (projectsRes.status === 404) {
+          setError("Team not found — double-check your Team ID");
+        } else {
+          setError("Could not load projects");
+        }
         return;
       }
 
-      const data = await res.json();
-      const newFile: FigmaFile = {
-        key,
-        name: data.name || "Untitled",
-        thumbnail_url: data.thumbnailUrl || "",
-        last_modified: data.lastModified || new Date().toISOString(),
-      };
+      const projectsData = await projectsRes.json();
+      const projects: { id: string; name: string }[] = projectsData.projects || [];
 
-      const updated = [newFile, ...files];
-      setFiles(updated);
-      saveFiles(updated);
-      setUrlInput("");
+      if (projects.length === 0) {
+        setError("No projects found in this team");
+        return;
+      }
+
+      // 2. Fetch files for each project in parallel
+      const allFiles: FigmaFile[] = [];
+
+      await Promise.all(
+        projects.map(async (project) => {
+          try {
+            const filesRes = await fetch(`https://api.figma.com/v1/projects/${project.id}/files`, {
+              headers: { Authorization: `Bearer ${connection.access_token}` },
+            });
+            if (!filesRes.ok) return;
+            const filesData = await filesRes.json();
+            const projectFiles: FigmaFile[] = (filesData.files || []).map((f: any) => ({
+              key: f.key,
+              name: f.name,
+              thumbnail_url: f.thumbnail_url || "",
+              last_modified: f.last_modified || "",
+              project_name: project.name,
+            }));
+            allFiles.push(...projectFiles);
+          } catch {
+            // skip failed projects silently
+          }
+        })
+      );
+
+      // Sort by last modified
+      allFiles.sort((a, b) => new Date(b.last_modified).getTime() - new Date(a.last_modified).getTime());
+      setFiles(allFiles);
     } catch {
-      setError("Failed to fetch file");
+      setError("Failed to fetch files");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRemove = (key: string) => {
-    const updated = files.filter((f) => f.key !== key);
-    setFiles(updated);
-    saveFiles(updated);
+  // Auto-fetch on mount if team ID is already saved
+  useEffect(() => {
+    if (connected && teamId) {
+      fetchFiles(teamId);
+    }
+  }, [connected, teamId]);
+
+  const handleSaveTeamId = () => {
+    const id = teamIdInput.trim();
+    if (!id) return;
+    localStorage.setItem(TEAM_ID_KEY, id);
+    setTeamId(id);
+    setTeamIdInput("");
+  };
+
+  const handleReset = () => {
+    localStorage.removeItem(TEAM_ID_KEY);
+    setTeamId("");
+    setFiles([]);
+    setError(null);
   };
 
   if (!connected) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <Figma className="h-10 w-10 text-muted-foreground/30 mb-3" />
-        <p className="text-sm text-muted-foreground">
-          Connect your Figma account to view your files.
-        </p>
+        <p className="text-sm text-muted-foreground">Connect your Figma account to view your files.</p>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Add file input */}
-      <div className="space-y-2">
+  // Team ID setup screen
+  if (!teamId) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-xl border border-border/50 bg-card p-6 space-y-4"
+      >
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Connect your Figma team</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Enter your Figma Team ID once and your files will load automatically every time.
+          </p>
+        </div>
+
+        <div className="rounded-lg bg-muted/50 border border-border/50 px-4 py-3 text-xs text-muted-foreground space-y-1">
+          <p className="font-medium text-foreground">Where to find your Team ID:</p>
+          <p>Open Figma → click on your team name in the left sidebar → look at the URL:</p>
+          <code className="block mt-1 bg-background rounded px-2 py-1 text-[11px]">
+            figma.com/files/team/<span className="text-primary font-bold">1234567890</span>/Your-Team
+          </code>
+        </div>
+
         <div className="flex gap-2">
           <Input
-            placeholder="Paste a Figma file URL..."
-            value={urlInput}
-            onChange={(e) => {
-              setUrlInput(e.target.value);
-              setError(null);
-            }}
-            onKeyDown={(e) => e.key === "Enter" && handleAddFile()}
-            disabled={loading}
+            placeholder="e.g. 1234567890"
+            value={teamIdInput}
+            onChange={(e) => setTeamIdInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSaveTeamId()}
             className="border-border/50"
           />
           <Button
-            onClick={handleAddFile}
-            disabled={!urlInput.trim() || loading}
-            className="gap-2 shrink-0"
+            onClick={handleSaveTeamId}
+            disabled={!teamIdInput.trim()}
+            className="shrink-0"
           >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Plus className="h-4 w-4" />
-            )}
-            Add
+            Connect
           </Button>
         </div>
-        {error && (
-          <p className="text-xs text-destructive">{error}</p>
-        )}
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Header with refresh */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          {loading ? "Loading files..." : `${files.length} file${files.length !== 1 ? "s" : ""}`}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fetchFiles(teamId)}
+            disabled={loading}
+            className="h-7 gap-1.5 text-xs text-muted-foreground"
+          >
+            <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+          <button
+            onClick={handleReset}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Change team
+          </button>
+        </div>
       </div>
 
-      {/* File grid */}
-      {files.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <FileImage className="h-10 w-10 text-muted-foreground/30 mb-3" />
-          <p className="text-sm text-muted-foreground">
-            No files yet. Paste a Figma file URL above to get started.
-          </p>
+      {/* Loading */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-sm text-muted-foreground">Fetching your Figma files...</span>
         </div>
-      ) : (
+      )}
+
+      {/* Error */}
+      {error && !loading && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      {/* File grid */}
+      {!loading && !error && files.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <AnimatePresence>
             {files.map((file, i) => (
-              <motion.div
+              <motion.a
                 key={file.key}
+                href={`https://www.figma.com/file/${file.key}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3, delay: i * 0.05 }}
-                className="relative group"
+                transition={{ duration: 0.3, delay: i * 0.04 }}
+                className="group block"
               >
-                <a
-                  href={`https://www.figma.com/file/${file.key}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                >
-                  <Card className="border-border/50 bg-card overflow-hidden transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
-                    <div className="aspect-[16/10] bg-muted/50 relative overflow-hidden">
-                      {file.thumbnail_url ? (
-                        <img
-                          src={file.thumbnail_url}
-                          alt={file.name}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <FileImage className="h-8 w-8 text-muted-foreground/40" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/90 shadow-sm">
-                          <ExternalLink className="h-3.5 w-3.5 text-gray-700" />
-                        </span>
+                <Card className="border-border/50 bg-card overflow-hidden transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
+                  <div className="aspect-[16/10] bg-muted/50 relative overflow-hidden">
+                    {file.thumbnail_url ? (
+                      <img
+                        src={file.thumbnail_url}
+                        alt={file.name}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <FileImage className="h-8 w-8 text-muted-foreground/40" />
                       </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/90 shadow-sm">
+                        <ExternalLink className="h-3.5 w-3.5 text-gray-700" />
+                      </span>
                     </div>
-                    <div className="px-3 py-2.5">
-                      <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {new Date(file.last_modified).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </p>
+                    <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <span className="rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white">
+                        {file.project_name}
+                      </span>
                     </div>
-                  </Card>
-                </a>
-                {/* Remove button */}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleRemove(file.key);
-                  }}
-                  className="absolute top-2 left-2 flex h-7 w-7 items-center justify-center rounded-lg bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-500"
-                  aria-label="Remove file"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </motion.div>
+                  </div>
+                  <div className="px-3 py-2.5">
+                    <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {file.last_modified
+                        ? new Date(file.last_modified).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "—"}
+                    </p>
+                  </div>
+                </Card>
+              </motion.a>
             ))}
           </AnimatePresence>
+        </div>
+      )}
+
+      {/* Empty */}
+      {!loading && !error && files.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <FileImage className="h-10 w-10 text-muted-foreground/30 mb-3" />
+          <p className="text-sm text-muted-foreground">No files found in this team.</p>
         </div>
       )}
     </div>
