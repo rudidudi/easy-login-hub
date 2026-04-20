@@ -10,12 +10,12 @@ import { LogOut, Palette, Menu, PenLine, Eye } from "lucide-react";
 import { motion } from "framer-motion";
 import PromptForm from "@/components/PromptForm";
 import FigmaConnect from "@/components/FigmaConnect";
-import ApiKeySettings, { getStoredApiKey } from "@/components/ApiKeySettings";
+import ApiKeySettings from "@/components/ApiKeySettings";
 import FigmaFiles from "@/components/FigmaFiles";
 import { useToast } from "@/hooks/use-toast";
 import { getFigmaConnection } from "@/lib/figma";
 
-const AGENT_URL = "https://designfolio-agent-production.up.railway.app";
+const FIGMA_MAKE_URL = "https://www.figma.com/make";
 
 /* ── Dashboard ─────────────────────────────────────────────── */
 
@@ -23,7 +23,6 @@ const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [lastPrompt, setLastPrompt] = useState<string | null>(null);
   const [figmaConnected, setFigmaConnected] = useState(() => !!getFigmaConnection());
   const [mcpPrompt, setMcpPrompt] = useState<string | null>(null);
@@ -51,64 +50,30 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const handlePromptSubmit = async (prompt: string) => {
+  const handlePromptSubmit = (prompt: string) => {
     setLastPrompt(prompt);
     setMcpPrompt(null);
-    setIsGenerating(true);
 
-    const figmaConnection = getFigmaConnection();
+    // Deep-link into Figma Make with the prompt pre-filled.
+    // User must be logged into figma.com — the Figma OAuth we already did
+    // ensures their session cookie is present in most cases.
+    const url = `${FIGMA_MAKE_URL}?prompt=${encodeURIComponent(prompt)}`;
+    const newTab = window.open(url, "_blank", "noopener,noreferrer");
 
-    if (!figmaConnection?.access_token) {
+    if (!newTab) {
       toast({
-        title: "Figma not connected",
-        description: "Connect your Figma account to generate designs.",
+        title: "Popup blocked",
+        description: "Allow popups for this site, then try again.",
         variant: "destructive",
       });
-      setIsGenerating(false);
       return;
     }
 
+    setMcpPrompt(prompt);
     toast({
-      title: "Generating your design...",
-      description: "Creating your landing page directly in Figma. This may take a few minutes.",
+      title: "Opened in Figma Make",
+      description: "Your prompt is pre-filled in the new tab. Continue the design there.",
     });
-
-    try {
-      const userApiKey = getStoredApiKey();
-      const response = await fetch(`${AGENT_URL}/generate-mcp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt,
-          figma_access_token: figmaConnection.access_token,
-          ...(userApiKey && { api_key: userApiKey }),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || data.error) {
-        toast({
-          title: "Generation failed",
-          description: data.error || "Something went wrong. Please try again.",
-          variant: "destructive",
-        });
-      } else {
-        setMcpPrompt(prompt);
-        toast({
-          title: "Design created!",
-          description: "Your landing page has been created directly in Figma.",
-        });
-      }
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Generation failed. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGenerating(false);
-    }
   };
 
   if (loading) {
@@ -246,7 +211,7 @@ const Dashboard = () => {
             </div>
 
             {/* Prompt Form */}
-            <PromptForm onSubmit={handlePromptSubmit} isGenerating={isGenerating} disabled={!figmaConnected} />
+            <PromptForm onSubmit={handlePromptSubmit} disabled={!figmaConnected} />
 
             {/* Results */}
             {mcpPrompt && (
@@ -256,10 +221,19 @@ const Dashboard = () => {
                 className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6"
               >
                 <h3 className="text-sm font-semibold text-emerald-500 uppercase tracking-wide">
-                  Design created in Figma
+                  Opened in Figma Make
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Your landing page has been created directly in your Figma account. Open Figma to see it.
+                  Continue designing in the Figma Make tab. If the popup was blocked,{" "}
+                  <a
+                    href={`${FIGMA_MAKE_URL}?prompt=${encodeURIComponent(mcpPrompt)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-emerald-600 hover:text-emerald-700"
+                  >
+                    click here to open it manually
+                  </a>
+                  .
                 </p>
               </motion.div>
             )}

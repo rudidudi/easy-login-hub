@@ -3,7 +3,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Figma, Loader2 } from "lucide-react";
+import { Figma, Loader2, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface PromptFormProps {
@@ -60,7 +60,7 @@ const PromptForm = ({ onSubmit, isGenerating = false, disabled = false }: Prompt
             <div>
               <CardTitle className="text-xl font-bold">Create a Landing Page</CardTitle>
               <CardDescription>
-                Describe your landing page and generate it directly in Figma
+                Describe your landing page and open it in Figma Make with your prompt pre-filled
               </CardDescription>
             </div>
           </div>
@@ -101,7 +101,7 @@ const PromptForm = ({ onSubmit, isGenerating = false, disabled = false }: Prompt
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground text-center">
-                      Claude is designing your page directly in Figma. This usually takes 1–2 minutes.
+                      Opening Figma Make in a new tab with your prompt pre-filled…
                     </p>
                   </motion.div>
                 ) : (
@@ -118,7 +118,7 @@ const PromptForm = ({ onSubmit, isGenerating = false, disabled = false }: Prompt
                       className="w-full gap-2 h-11 bg-[#A259FF] hover:bg-[#8B3FE0] text-white font-semibold"
                     >
                       <Figma className="h-4 w-4" />
-                      Generate in Figma
+                      Open in Figma Make
                     </Button>
                   </motion.div>
                 )}
